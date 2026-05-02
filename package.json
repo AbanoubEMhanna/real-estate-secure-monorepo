@@ -1,0 +1,16 @@
+{
+  "name": "real-estate-secure-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @real-estate/api start:dev",
+    "build:api": "pnpm --filter @real-estate/api build",
+    "prisma:generate": "pnpm --filter @real-estate/api prisma:generate",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
