@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/c
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import * as argon2 from "argon2";
+import { randomUUID } from "node:crypto";
 import { UsersService } from "../users/users.service";
 import { LoginDto, RegisterDto } from "./auth.dto";
 
@@ -54,7 +55,7 @@ export class AuthService {
         secret: this.config.getOrThrow<string>("JWT_ACCESS_SECRET"),
         expiresIn: "15m"
       }),
-      this.jwtService.signAsync(payload, {
+      this.jwtService.signAsync({ ...payload, jti: randomUUID() }, {
         secret: this.config.getOrThrow<string>("JWT_REFRESH_SECRET"),
         expiresIn: "30d"
       })

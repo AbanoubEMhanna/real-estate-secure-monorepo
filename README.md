@@ -32,3 +32,28 @@ pnpm dev:api
 cd apps/mobile && flutter pub get
 flutter run --dart-define API_BASE_URL=http://10.0.2.2:3001
 ```
+
+## API E2E Tests
+
+The API e2e suite runs against a real PostgreSQL test database and verifies:
+
+- Auth register/login/refresh and duplicate email handling.
+- DTO validation rejects invalid and unknown fields.
+- Upload signing requires auth and returns constrained Cloudinary direct-upload parameters without exposing the API secret.
+- Property creation accepts only Cloudinary image references from the authenticated user's folder.
+- Draft properties stay hidden until published.
+- Another user cannot publish a property they do not own.
+
+Run the full suite:
+
+```bash
+pnpm test:e2e:api:all
+```
+
+Or step by step:
+
+```bash
+pnpm test:e2e:api:db
+pnpm test:e2e:api:prepare
+pnpm test:e2e:api
+```

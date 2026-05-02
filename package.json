@@ -6,6 +6,10 @@
     "dev:api": "pnpm --filter @real-estate/api start:dev",
     "build:api": "pnpm --filter @real-estate/api build",
     "prisma:generate": "pnpm --filter @real-estate/api prisma:generate",
+    "test:e2e:api:db": "docker compose -f docker-compose.e2e.yml up -d",
+    "test:e2e:api:prepare": "pnpm --filter @real-estate/api test:e2e:prepare",
+    "test:e2e:api": "pnpm --filter @real-estate/api test:e2e",
+    "test:e2e:api:all": "pnpm test:e2e:api:db && pnpm test:e2e:api:prepare && pnpm test:e2e:api",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test"
   },
