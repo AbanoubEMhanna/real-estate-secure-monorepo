@@ -1,9 +1,10 @@
 export type Role = "USER" | "AGENT" | "ADMIN";
 
-export type CloudinarySignedUpload = {
-  cloudName: string;
-  apiKey: string;
-  timestamp: number;
-  folder: string;
-  signature: string;
+export type UploadedPropertyImage = {
+  publicId: string;
+  secureUrl: string;
+  width?: number;
+  height?: number;
+  format?: string;
+  bytes?: number;
 };

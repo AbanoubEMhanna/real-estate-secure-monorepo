@@ -1,6 +1,6 @@
 # Real Estate Secure Monorepo
 
-NestJS REST API + PostgreSQL/Prisma + Flutter mobile app for a real estate product. File uploads are mobile-originated and go directly to Cloudinary with backend-generated signed parameters.
+NestJS REST API + PostgreSQL/Prisma + Flutter mobile app for a real estate product. File uploads are selected on mobile, sent to the backend as multipart form-data, and uploaded to Cloudinary by the API.
 
 ## Structure
 
@@ -10,12 +10,15 @@ NestJS REST API + PostgreSQL/Prisma + Flutter mobile app for a real estate produ
 
 ## Upload security model
 
-The Cloudinary API secret never ships to mobile. The mobile app:
+The Cloudinary API secret and API key never ship to mobile. The mobile app:
 
 1. Authenticates with the API.
-2. Requests signed upload parameters from `POST /uploads/sign`.
-3. Uploads the selected image directly to Cloudinary using the returned signature.
-4. Sends the returned `public_id` and `secure_url` when creating a property.
+2. Sends the selected image to `POST /uploads/property-image` as multipart form-data.
+3. The backend validates MIME type and size, then uploads to Cloudinary.
+4. The backend returns `publicId`, `secureUrl`, width, and height.
+5. The app sends those returned image references when creating a property.
+
+Use `CLOUDINARY_CLOUD_NAME=pompo` in `.env`. Keep `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` only in the backend `.env`; do not add them to Flutter, Git, or CI logs.
 
 ## Run
 

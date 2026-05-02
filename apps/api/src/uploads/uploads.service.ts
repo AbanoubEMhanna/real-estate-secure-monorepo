@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { v2 as cloudinary } from "cloudinary";
+import { UploadApiOptions, UploadApiResponse, v2 as cloudinary } from "cloudinary";
 
 @Injectable()
 export class UploadsService {
@@ -13,30 +13,37 @@ export class UploadsService {
     });
   }
 
-  signImageUpload(userId: string, context?: string) {
-    const timestamp = Math.floor(Date.now() / 1000);
+  async uploadPropertyImage(userId: string, file: Express.Multer.File) {
     const rootFolder = this.config.get<string>("CLOUDINARY_UPLOAD_FOLDER", "real-estate");
-    const folder = `${rootFolder}/${userId}`;
-    const tags = ["real-estate", context ?? "property"].join(",");
-    const params = {
+    const folder = `${rootFolder}/${userId}/properties`;
+    const result = await this.uploadBuffer(file.buffer, {
       folder,
-      timestamp,
-      tags
-    };
-
-    const signature = cloudinary.utils.api_sign_request(
-      params,
-      this.config.getOrThrow<string>("CLOUDINARY_API_SECRET")
-    );
+      tags: ["real-estate", "property"],
+      allowed_formats: ["jpg", "jpeg", "png", "webp"],
+      resource_type: "image"
+    });
 
     return {
-      cloudName: this.config.getOrThrow<string>("CLOUDINARY_CLOUD_NAME"),
-      apiKey: this.config.getOrThrow<string>("CLOUDINARY_API_KEY"),
-      timestamp,
-      folder,
-      tags,
-      resourceType: "image",
-      signature
+      publicId: result.public_id,
+      secureUrl: result.secure_url,
+      width: result.width,
+      height: result.height,
+      format: result.format,
+      bytes: result.bytes
     };
+  }
+
+  private uploadBuffer(buffer: Buffer, options: UploadApiOptions) {
+    return new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+        if (error || !result) {
+          reject(error ?? new Error("Cloudinary upload failed"));
+          return;
+        }
+        resolve(result);
+      });
+
+      stream.end(buffer);
+    });
   }
 }

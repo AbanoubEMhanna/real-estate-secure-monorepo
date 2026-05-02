@@ -36,30 +36,15 @@ class ApiClient {
     await _persistTokens(response.data);
   }
 
-  Future<Map<String, dynamic>> signUpload() async {
-    final response = await _dio.post(
-      '/uploads/sign',
-      data: {'context': 'property', 'resourceType': 'image'},
-      options: await _authOptions(),
-    );
-    return Map<String, dynamic>.from(response.data);
-  }
-
   Future<Map<String, dynamic>> uploadImage(File image) async {
-    final signature = await signUpload();
-    final cloudName = signature['cloudName'] as String;
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(image.path),
-      'api_key': signature['apiKey'],
-      'timestamp': signature['timestamp'],
-      'folder': signature['folder'],
-      'tags': signature['tags'],
-      'signature': signature['signature'],
     });
 
-    final response = await Dio().post(
-      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+    final response = await _dio.post(
+      '/uploads/property-image',
       data: formData,
+      options: await _authOptions(),
     );
     return Map<String, dynamic>.from(response.data);
   }
@@ -88,8 +73,8 @@ class ApiClient {
         'areaSqm': areaSqm,
         'images': images
             .map((image) => {
-                  'publicId': image['public_id'],
-                  'secureUrl': image['secure_url'],
+                  'publicId': image['publicId'],
+                  'secureUrl': image['secureUrl'],
                   'width': image['width'],
                   'height': image['height'],
                 })
