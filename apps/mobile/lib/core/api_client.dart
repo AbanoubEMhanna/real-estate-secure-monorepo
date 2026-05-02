@@ -37,16 +37,40 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> uploadImage(File image) async {
+    final signature = await _signPropertyImage(image.path.split('/').last);
+    final allowedFormats = List<String>.from(signature['allowedFormats'] as List);
+    final extension = image.path.split('.').last.toLowerCase();
+    final maxBytes = signature['maxBytes'] as int;
+
+    if (!allowedFormats.contains(extension)) {
+      throw Exception('Only ${allowedFormats.join(', ')} images are allowed.');
+    }
+
+    if (await image.length() > maxBytes) {
+      throw Exception('Image must be smaller than ${maxBytes ~/ (1024 * 1024)}MB.');
+    }
+
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(image.path),
+      'api_key': signature['apiKey'],
+      'signature': signature['signature'],
+      ...Map<String, dynamic>.from(signature['params'] as Map),
     });
 
-    final response = await _dio.post(
-      '/uploads/property-image',
+    final response = await Dio().post(
+      signature['uploadUrl'] as String,
       data: formData,
-      options: await _authOptions(),
     );
-    return Map<String, dynamic>.from(response.data);
+    final uploaded = Map<String, dynamic>.from(response.data);
+
+    return {
+      'publicId': uploaded['public_id'],
+      'secureUrl': uploaded['secure_url'],
+      'width': uploaded['width'],
+      'height': uploaded['height'],
+      'format': uploaded['format'],
+      'bytes': uploaded['bytes'],
+    };
   }
 
   Future<void> createProperty({
@@ -87,6 +111,15 @@ class ApiClient {
   Future<Options> _authOptions() async {
     final token = await _storage.read(key: 'accessToken');
     return Options(headers: {'authorization': 'Bearer $token'});
+  }
+
+  Future<Map<String, dynamic>> _signPropertyImage(String fileName) async {
+    final response = await _dio.post(
+      '/uploads/sign-property-image',
+      data: {'fileName': fileName},
+      options: await _authOptions(),
+    );
+    return Map<String, dynamic>.from(response.data);
   }
 
   Future<void> _persistTokens(dynamic data) async {

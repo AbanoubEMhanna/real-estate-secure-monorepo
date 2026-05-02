@@ -1,12 +1,18 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../prisma/prisma.service";
-import { CreatePropertyDto } from "./property.dto";
+import { CreatePropertyDto, PropertyImageDto } from "./property.dto";
 
 @Injectable()
 export class PropertiesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService
+  ) {}
 
   create(ownerId: string, dto: CreatePropertyDto) {
+    dto.images.forEach((image) => this.validateImageOwnership(ownerId, image));
+
     return this.prisma.property.create({
       data: {
         ownerId,
@@ -54,5 +60,20 @@ export class PropertiesService {
       data: { status: "PUBLISHED" },
       include: { images: true }
     });
+  }
+
+  private validateImageOwnership(ownerId: string, image: PropertyImageDto) {
+    const rootFolder = this.config.get<string>("CLOUDINARY_UPLOAD_FOLDER", "real-estate");
+    const expectedPublicIdPrefix = `${rootFolder}/${ownerId}/properties/`;
+    const cloudName = this.config.getOrThrow<string>("CLOUDINARY_CLOUD_NAME");
+    const expectedUrlPrefix = `https://res.cloudinary.com/${cloudName}/image/upload/`;
+
+    if (!image.publicId.startsWith(expectedPublicIdPrefix)) {
+      throw new BadRequestException("Image publicId is outside the authenticated user's upload folder");
+    }
+
+    if (!image.secureUrl.startsWith(expectedUrlPrefix)) {
+      throw new BadRequestException("Image secureUrl is not from the configured Cloudinary cloud");
+    }
   }
 }
